@@ -21,7 +21,8 @@ def whats_new(session):
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
     div_with_ul = find_tag(main_div,
                            'div', attrs={'class': 'toctree-wrapper'})
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    sections_by_python = div_with_ul.find_all('li',
+                                              attrs={'class': 'toctree-l1'})
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = section.find('a')
@@ -119,9 +120,9 @@ def pep(session):
                 strip=True)
             if right_pep_status not in EXPECTED_STATUS[status_tag]:
                 logging.info(
-                f'Несовпадающие статусы: {pep_link_page}. '
-                f'Статус в карточке: {right_pep_status}. '
-                f'Ожидаемые статусы: {EXPECTED_STATUS[status_tag]}'
+                    f'Несовпадающие статусы: {pep_link_page}. '
+                    f'Статус в карточке: {right_pep_status}. '
+                    f'Ожидаемые статусы: {EXPECTED_STATUS[status_tag]}'
                 )
             status_counter[right_pep_status] = (
                     status_counter.get(right_pep_status, 0) + 1
