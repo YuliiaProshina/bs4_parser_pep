@@ -43,3 +43,4 @@ def file_output(results, cli_args):
         writer.writerows(results)
     logging.info(f'Файл с результатами был сохранён: {file_path}')
 
+
