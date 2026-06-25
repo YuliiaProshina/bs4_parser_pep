@@ -41,7 +41,7 @@ def whats_new(session):
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     error_messages = []
     for version_a_tag in tqdm(get_soup(session, whats_new_url).select(
-        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 a'
+        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 > a'
     )):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         try:
