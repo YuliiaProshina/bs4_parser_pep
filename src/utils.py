@@ -3,7 +3,6 @@ from requests import RequestException
 
 from exceptions import ParserFindTagException
 
-
 PAGE_LOAD_ERROR_MESSAGE = (
     'Возникла ошибка при загрузке страницы {url}: {error}'
 )

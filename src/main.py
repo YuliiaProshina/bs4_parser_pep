@@ -4,52 +4,67 @@ from collections import defaultdict
 from urllib.parse import urljoin
 
 import requests_cache
-from requests import RequestException
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (ALL_VERSIONS_NOT_FOUND_MESSAGE, ARCHIVE_SAVED_MESSAGE,
-                       ARGS_MESSAGE, EXPECTED_STATUS,
-                       MAIN_DOC_URL, PARSER_ERROR_MESSAGE,
-                       PARSER_FINISHED_MESSAGE, PARSER_STARTED_MESSAGE,
-                       PEP_URL, STATUS_MISMATCH_MESSAGE, BASE_DIR)
-from exceptions import ParserFindTagException
+from constants import (BASE_DIR, DOWNLOADS_DIR_NAME, EXPECTED_STATUS,
+                       MAIN_DOC_URL, PEP_URL)
+
 from outputs import control_output
 from utils import find_tag, get_response, get_soup
+
+ARCHIVE_SAVED_MESSAGE = 'Архив был загружен и сохранён: {archive_path}'
+PARSER_ERROR_MESSAGE = 'Во время работы парсера возникла ошибка: {error}'
+PARSER_STARTED_MESSAGE = 'Парсер запущен!'
+PARSER_FINISHED_MESSAGE = 'Парсер завершил работу.'
+ARGS_MESSAGE = 'Аргументы командной строки: {args}'
+
+STATUS_MISMATCH_MESSAGE = (
+    'Несовпадающие статусы: {pep_link_page}. '
+    'Статус в карточке: {right_pep_status}. '
+    'Ожидаемые статусы: {expected_statuses}'
+)
+
+ALL_VERSIONS_NOT_FOUND_MESSAGE = 'Не найден список All versions'
+
+WHATS_NEW_PAGE_LOAD_ERROR = (
+    'Не удалось загрузить страницу версии Python: {url}. Ошибка: {error}'
+)
+
+PEP_PAGE_LOAD_ERROR = (
+    'Не удалось загрузить страницу PEP: {url}. Ошибка: {error}'
+)
 
 
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
-    soup = get_soup(session, whats_new_url)
-    if soup is None:
-        return
-    sections_by_python = soup.select(
-        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1'
-    )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     error_messages = []
-    for section in tqdm(sections_by_python):
-        version_a_tag = section.find('a')
+    for version_a_tag in tqdm(get_soup(session, whats_new_url).select(
+        '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 a'
+    )):
         version_link = urljoin(whats_new_url, version_a_tag['href'])
         try:
             soup = get_soup(session, version_link)
-        except RequestException as error:
-            error_messages.append(str(error))
+        except ConnectionError as error:
+            error_messages.append(
+                WHATS_NEW_PAGE_LOAD_ERROR.format(
+                    url=version_link,
+                    error=error,
+                )
+            )
             continue
         results.append((
             version_link,
             find_tag(soup, 'h1').text,
             find_tag(soup, 'dl').text.replace('\n', ' '),
         ))
-    for message in error_messages:
-        logging.error(message)
+    list(map(logging.error, error_messages))
     return results
 
 
 def latest_versions(session):
     soup = get_soup(session, MAIN_DOC_URL)
-    if soup is None:
-        return
     sidebar = find_tag(soup, 'div', {'class': 'sphinxsidebarwrapper'})
     ul_tags = sidebar.find_all('ul')
     for ul in ul_tags:
@@ -57,7 +72,7 @@ def latest_versions(session):
             a_tags = ul.find_all('a')
             break
     else:
-        raise ParserFindTagException(ALL_VERSIONS_NOT_FOUND_MESSAGE)
+        raise RuntimeError(ALL_VERSIONS_NOT_FOUND_MESSAGE)
     results = [('Ссылка на документацию', 'Версия', 'Статус')]
     pattern = r'Python (?P<version>\d\.\d+) \((?P<status>.*)\)'
     for a_tag in a_tags:
@@ -73,14 +88,12 @@ def latest_versions(session):
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     soup = get_soup(session, downloads_url)
-    if soup is None:
-        return
     pdf_a4_link = soup.select_one(
         'div[role="main"] table.docutils a[href$=".zip"]'
     )['href']
     archive_url = urljoin(downloads_url, pdf_a4_link)
     filename = archive_url.split('/')[-1]
-    downloads_dir = BASE_DIR / 'downloads'
+    downloads_dir = BASE_DIR / DOWNLOADS_DIR_NAME
     downloads_dir.mkdir(exist_ok=True)
     archive_path = downloads_dir / filename
     response = get_response(session, archive_url)
@@ -91,11 +104,10 @@ def download(session):
 
 def pep(session):
     soup = get_soup(session, PEP_URL)
-    if soup is None:
-        return
     rows = soup.select('table.pep-zero-table tbody tr')
     status_counter = defaultdict(int)
     mismatch_messages = []
+    error_messages = []
     for row in tqdm(rows):
         columns = row.find_all('td')
         information_tag = columns[0].find('abbr')
@@ -105,8 +117,15 @@ def pep(session):
         link_tag = row.find('a', {'class': 'pep reference internal'})
         pep_link = link_tag['href']
         pep_link_page = urljoin(PEP_URL, pep_link)
-        pep_soup = get_soup(session, pep_link_page)
-        if pep_soup is None:
+        try:
+            pep_soup = get_soup(session, pep_link_page)
+        except ConnectionError as error:
+            error_messages.append(
+                PEP_PAGE_LOAD_ERROR.format(
+                    url=pep_link_page,
+                    error=error,
+                )
+            )
             continue
         status_dt = None
         for dt_tag in pep_soup.find_all('dt'):
@@ -125,8 +144,8 @@ def pep(session):
                 )
             )
         status_counter[right_pep_status] += 1
-    for message in mismatch_messages:
-        logging.info(message)
+    list(map(logging.info, mismatch_messages))
+    list(map(logging.error, error_messages))
     return [
         ('Статус', 'Количество'),
         *status_counter.items(),
@@ -156,8 +175,10 @@ def main():
         results = MODE_TO_FUNCTION[parser_mode](session)
         if results is not None:
             control_output(results, args)
-    except Exception:
-        logging.exception(PARSER_ERROR_MESSAGE)
+    except Exception as error:
+        logging.exception(
+            PARSER_ERROR_MESSAGE.format(error=error)
+        )
     logging.info(PARSER_FINISHED_MESSAGE)
 
 

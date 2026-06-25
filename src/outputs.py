@@ -4,8 +4,9 @@ import logging
 
 from prettytable import PrettyTable
 
-from constants import (DATETIME_FORMAT, FILE_OUTPUT, PRETTY_OUTPUT,
-                       BASE_DIR, FILE_SAVED_MESSAGE)
+from constants import BASE_DIR, DATETIME_FORMAT, FILE_OUTPUT, PRETTY_OUTPUT
+
+FILE_SAVED_MESSAGE = 'Файл с результатами был сохранён: {file_path}'
 
 
 def default_output(results, *args):

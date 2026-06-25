@@ -18,21 +18,9 @@ EXPECTED_STATUS = {
 
 PRETTY_OUTPUT = 'pretty'
 FILE_OUTPUT = 'file'
-OUTPUT_CHOICES = (PRETTY_OUTPUT, FILE_OUTPUT)
 
 BASE_DIR = Path(__file__).parent
 LOG_DIR = BASE_DIR / 'logs'
 LOG_FILE = LOG_DIR / 'parser.log'
 
-ARCHIVE_SAVED_MESSAGE = 'Архив был загружен и сохранён: {archive_path}'
-PARSER_ERROR_MESSAGE = 'Во время работы парсера возникла ошибка.'
-PARSER_STARTED_MESSAGE = 'Парсер запущен!'
-PARSER_FINISHED_MESSAGE = 'Парсер завершил работу.'
-ARGS_MESSAGE = 'Аргументы командной строки: {args}'
-STATUS_MISMATCH_MESSAGE = (
-    'Несовпадающие статусы: {pep_link_page}. '
-    'Статус в карточке: {right_pep_status}. '
-    'Ожидаемые статусы: {expected_statuses}'
-)
-ALL_VERSIONS_NOT_FOUND_MESSAGE = 'Не найден список All versions'
-FILE_SAVED_MESSAGE = 'Файл с результатами был сохранён: {file_path}'
+DOWNLOADS_DIR_NAME = 'downloads'
