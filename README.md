@@ -29,7 +29,7 @@
 Клонируйте репозиторий:
 
 ```bash
-git clone <ссылка-на-репозиторий>
+git clone https://github.com/YuliiaProshina/bs4_parser_pep.git
 cd bs4_parser_pep
 ```
 
@@ -156,4 +156,4 @@ flake8 ./src
 ```
 
 ## Автор
-Прошина Юлия - студент Яндекс.Практикума# Проект парсинга pep
+Прошина Юлия - студент Яндекс.Практикума www.linkedin.com/in/yuliia-proshina-160551372
