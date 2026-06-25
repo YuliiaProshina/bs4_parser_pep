@@ -25,12 +25,10 @@ LOG_DIR = BASE_DIR / 'logs'
 LOG_FILE = LOG_DIR / 'parser.log'
 
 ARCHIVE_SAVED_MESSAGE = 'Архив был загружен и сохранён: {archive_path}'
-PAGE_LOAD_ERROR_MESSAGE = 'Не удалось получить страницу: {url}'
 PARSER_ERROR_MESSAGE = 'Во время работы парсера возникла ошибка.'
 PARSER_STARTED_MESSAGE = 'Парсер запущен!'
 PARSER_FINISHED_MESSAGE = 'Парсер завершил работу.'
 ARGS_MESSAGE = 'Аргументы командной строки: {args}'
-TAG_NOT_FOUND_MESSAGE = 'Не найден тег {tag} {attrs}'
 STATUS_MISMATCH_MESSAGE = (
     'Несовпадающие статусы: {pep_link_page}. '
     'Статус в карточке: {right_pep_status}. '
